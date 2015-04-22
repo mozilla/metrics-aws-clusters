@@ -1,0 +1,12 @@
+FILE_FOR_SECKEY    = 'scr.dat'
+TASK_NODE_TYPE     = 'm3.xlarge'
+REFRESH_TIME       = 120
+USER_DATA          = 'userdata.sqlite'
+MASTER_INSTANCE_TYPE = 'm3.xlarge'
+CORE_INSTANCE_TYPE = 'm3.xlarge'
+AMI_VERSION        = '3.6.0'
+CLUSTER_LIFE_MIN   = '45' ## cluster will die in so many minutes
+DEFAULT_CORE_NODES = 5
+SPOT_PRICE_PCT_RULE = 0.70
+SPOTTEXT           = str(SPOT_PRICE_PCT_RULE) +" percentile of last 1 day of spot history data "
+## http://www.ec2instances.info/?filter=m3.

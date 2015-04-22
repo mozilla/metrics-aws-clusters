@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <meta http-equiv="refresh" content="630">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>Metrics Mozilla Cluster Bed</title>
+   <meta name="author" content="Saptarshi Guha" />
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+   <link rel="stylesheet" type=text/css href="{{ url_for('static', filename='screen.css') }}">
+   
+   <script type="text/x-mathjax-config">
+     MathJax.Hub.Config({
+     jax: ["input/TeX", "output/HTML-CSS"],
+     tex2jax: {
+     inlineMath: [ ['$', '$'] ],
+     displayMath: [ ['$$', '$$']],
+     processEscapes: true,
+     skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+     },
+     messageStyle: "none",
+     "HTML-CSS": { preferredFont: "TeX", availableFonts: ["STIX","TeX"] }
+     });
+   </script>
+   <link href='http://fonts.googleapis.com/css?family=Lobster|Varela+Round' rel='stylesheet' type='text/css'>
+   <!-- jQuery -->
+   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+   <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
+   <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML" type="text/javascript"></script>
+   <script src="https://login.persona.org/include.js" type="text/javascript"></script>
+   <script type="text/javascript">$(function() {
+     var gotAssertion, logoutCallback, loginURL, logoutURL;
+       gotAssertion = function(assertion) {
+           if (assertion) {
+               return $.ajax({
+                   type: 'POST',
+                   url: '/api/login',
+                   data: {
+                       assertion: assertion
+                   },
+                   success: function(res, status, xhr) {
+                       return location.reload(true);
+                   },
+                   error: function(res, status, xhr) {
+                       return alert("login failure: " + status);
+                   }
+               });
+           }
+       };
+       logoutCallback = function(event) {
+           $.ajax({
+               type: 'POST',
+               url: '/api/logout',
+               success: function() {
+                   return location.reload(true);
+               },
+               error: function(res, status, xhr) {
+                   console.log(res);
+                   return alert("logout failure: " + status);
+               }
+           });
+           return false;
+       };
+       return $(function() {
+              $('#browserid-login').click(function() {
+               console.log("Pressed Login");
+               navigator.id.get(gotAssertion);
+               return false;
+           });
+           $('#browserid-logout').click(function() {
+               navigator.id.logout(logoutCallback);
+               return false;
+           });
+       });
+   });</script>
+</head>
+
+
+<body>
+
+
+<div <div class="navbar navbar-inverse" role="navigation">
+     <div class="container">
+       <div class="navbar-header">
+         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"> <span class="sr-only">Toggle navigation</span>
+           <span class="icon-bar"></span>
+           <span class="icon-bar"></span>
+           <span class="icon-bar"></span>
+         </button> <div class="navbar-brand" href="#" style="font-family: 'Lobster', cursive;font-size:32px;"><b>MozMetrics Monster</b></div>
+         
+       </div>
+
+       {% block toplinks %}
+       {% endblock %}<!--/.nav-collapse -->
+     </div>
+</div>
+
+
+<div class="foo">
+  <div class="container">
+    <div class="row">
+    <div class="col-lg-11">
+       {% block bodymain %}
+       {% endblock %}<!--/.nav-collapse -->
+   
+
+    </div>
+  </div>
+  </div>
+</div> <!--foo-->
+
+</body>

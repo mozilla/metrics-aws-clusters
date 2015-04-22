@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block toplinks %}
+       <div class="collapse navbar-collapse">
+         <ul class="nav navbar-nav">
+           <li><a href="/">Summary</a>
+           </li>
+           <li class="active"><a href="/prefs">Preferences</a>
+           </li>
+           <!-- <li><a>My Cron Jobs</a> -->
+           </li>
+           <li><a>Resources</a>
+           </li>
+           <li>
+             {% if current_user.is_authorized() %}
+             <a id="browserid-logout" class="btn btn-mini" type="button">Sign Out</a>
+             {% else %}
+             <a id="browserid-login" class="btn btn-mini" type="button">Sign In With Persona</a>
+              {% endif %}
+           </li>
+           <li>
+             {% if current_user.is_authorized() %}
+             <a  style="color:black;font-size:80%;">{{ current_user.email }} </a>
+             {% endif %}
+         </ul>
+       </div>
+{% endblock %}
+
+
+{% block bodymain %}
+<form action="/saveprefs" method="post" enctype="multipart/form-data">
+
+  <h4>SSH Public Key</h4>
+  <p>
+    Your public key file. Usually <code>id_{rsa/dsa}.pub</code> (typically found in ~/.ssh). This will be appended
+    to the server's <code>authorized_keys</code> to grant you SSH access. Do
+    <strong>not</strong> upload a private key file.
+  </p>
+  {% if userhaskey %}
+  <p>Your current key is</p>
+  <code> {{ currentkey }} </code>
+  <td class="field-input">
+    <input type="file" name="public-ssh-key" />
+  </td>
+  {% else %}
+  <td class="field-input">
+    <input type="file" name="public-ssh-key"  required />
+  </td>
+  {% endif %}
+  <br/>
+  <input type="submit" class="btn btn-success" name="submit" value="Save Prefs">
+</form>
+
+{% endblock %}

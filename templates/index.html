@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+
+{% block toplinks %}
+       <div class="collapse navbar-collapse">
+         <ul class="nav navbar-nav">
+           <li class="active"><a href="/">Summary</a>
+           </li>
+           <!-- <li><a href="/prefs">Preferences</a> -->
+           </li>
+           <li><a>Spot Price Graphs</a> </li>
+           <li><a>Resources</a>
+           </li>
+           <li>
+             {% if current_user.is_authorized() %}
+             <a id="browserid-logout" class="btn btn-mini" type="button">Sign Out</a>
+             {% else %}
+             <a id="browserid-login" class="btn btn-mini" type="button">Sign In With Persona</a>
+              {% endif %}
+           </li>
+           <li>
+             {% if current_user.is_authorized() %}
+             <a  style="color:black;font-size:80%;">{{ current_user.email }} </a>
+             {% endif %}
+         </ul>
+       </div>
+{% endblock %}
+
+{% block bodymain %}
+      <p>
+        This is your very own cluster. Enjoy. Use responsibily.
+        <ul>
+          <li> In the following section, you can see the cluster statistics.</li>
+          <li> A weekly report will be sent to metrics@mozilla.com
+            summarizing yours (and others) usage of their clusters.</li>
+          <li> You can add more spot nodes in the following
+          section. Mention a bid price ( a default is set ) and if the
+          Amazon Spot Marketplace bid price goes above your bid price
+          your spot instances will be killed. Worry not, the your data
+          wont be lost, the core nodes will keep computing. See the
+          Resources page for a descriptions of Master,Core, and Spot
+          nodes.</li>
+        </ul>
+
+
+        <h3>My Clusters</h3>
+        {% if not current_user.is_authorized() %}
+        You need to sign in with Persona, and be one of the metrics team to see your list of clusters.
+        {% else %}
+
+        {% if err %}
+        <code>
+        {{ message }}
+        </code>
+        
+        {% else %}
+        {% if clusters|length> 0 %}
+        <table class="table table-striped table-bordered table-condensed" style="font-size:70%;">
+          <thead>
+            <tr>
+              <th>Cluster ID</th>
+              <th>Name</th>
+              <th>Started At</th>
+              <th>State</th>
+              <th>Instance Hours</th>
+              <th>Core/Spot</th>
+              <th>Master IP</th>
+              <th>JobTracker UI</th>
+              <th>RStudio UI</th>
+              <!-- <th>IPython NB UI</th> -->
+            </tr>
+          </thead>
+          <tbody>
+            {% for clus in clusters %}
+            <tr>
+              <td>{{ clus['id'] }}</td>
+              <td>{{ clus['name'] }}</td>
+              <td>{{ clus['ready'] }}</td>
+              <td>{{ clus['state'] }}</td>
+              <td>{{ clus['instancehrs'] }}</td>
+              <td>{{ clus['corenodes'] }} / {{clus['tasknodes'] }}</td>
+              <td>{{ clus['ip'] }}</td>
+              <td><a href='{{ clus['ip']+":9026" }}' target="_blank"> {{ clus['ip']+":9026" }} </a></td>
+              <td><a href='{{ clus['ip']+":8787" }}' target="_blank"> {{ clus['ip']+":8787" }} </a></td>
+              <!-- <td>{{ clus['ip']+":1978" }}</td> -->
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div style="font-size:60%;"> You can only check once every 7 minutes. {{timecheck}} </div>
+        {% else %}
+        No clusters running, why not create one?
+        {% endif %}
+        {% endif %}
+
+             <h3>Cluster Operations</h3>
+        {% if clusters|length> 0 %}
+
+        Spots are always {{ config['TASK_NODE_TYPE'] }}
+        instances. Spot price is set to the {{ config['SPOTTEXT'] }} (currently: {{ spot }}) . To kill all the
+        spots, choose 0 for "Add # of Spots...".  To end the
+        cluster, check "Terminate".
+        <div style="margin-bottom:10px;"></div>
+        <form action="/modify_cluster" method="post" enctype="multipart/form-data">
+        <table class="table table-striped table-bordered table-condensed" style="font-size:70%;">
+          <thead>
+            <tr>
+              <th>Cluster ID</th>
+              <th>Cluster Name</th>
+              <th>Add # of Spots</th>
+              <th>Terminate Cluster</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for clus in clusters %}
+            <tr>
+              <td>{{ clus['id'] }}</td>
+              <td>{{ clus['name'] }}</td>
+              <input type="hidden" name={{ "clusid"+clus['index'] }}  value={{ clus['id'] }}>
+              <!-- <td><input type="number" name={{ clus['id'] + "-spot" }} placeholder="" min="0"  max="15" size="3px" style="width: 50px;"> </td> -->
+              <td>
+                <select class="form-control" name={{ clus['id'] + "-spot" }} >
+                  {% for n in range(0,40,5) %}
+                    <option value="{{n}}">{{n}}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="checkbox" name={{ clus['id'] + "-kill"}}> </td>
+            </tr>
+            {% endfor %}  
+          </tbody>
+        </table>
+        <input type="submit" class="btn btn-success" name="submit" value="Submit">
+        </form>
+        {% else %}
+        No clusters. No ops.
+        {% endif %}
+        
+        {% endif %}  <!-- authorized -->
+        
+        <h3> Create a Cluster</h3>
+        {% if not current_user.is_authorized() %}
+        You need to sign in with Persona, and be one of the metrics team to create clusters
+        {% else %}
+        <form action="/new_cluster" method="post" enctype="multipart/form-data">
+        <blockquote style="font-size:90%;">
+          Quickly quickly, make me a cluster
+          <br/>my boss wants a number and she wants it fast
+          <br><input type="number" id="newClusterNodes" name="numnodes" placeholder="5" min="1" max="15" size="3px" style="width: 50px;"> nodes i need to crunch me data
+          <br/>we'll get  your number, and please, no stress.
+          <br/>have a coffee, drink some tea
+          <br/>put your feet up, and sing  softlee
+        </blockquote>
+        The master is a {{ config['MASTER_INSTANCE_TYPE'] }} and the core nodes are {{ config['CORE_INSTANCE_TYPE'] }}
+        nodes . The number of core nodes cannot be modified later. If
+        you need more compute power during your workflow modify the
+        cluster  and add spot nodes. Your data is only stored
+        on the core nodes, so even if spot nodes die, you will
+        not lose data.
+        <h4>Describe the Cluster</h4>
+          <div class="form-group">
+            <input type="text" class="form-control" name="clusdesc" placeholder="this is optional">
+          </div>
+        <!-- <h4>Launch Spark</h4> -->
+        <!-- <p> If you launch Spark, then RHIPE won't run (Spark takes up all the resources). So choose accordingly. Your selection will be remembered. -->
+        <!-- </p> -->
+        <!--   <div class="form-group"> -->
+        <!--     <input type="checkbox" class="form-control" name="usespark" > -->
+        <!--   </div> -->
+          
+        <h4>SSH Public Key</h4>
+        <p>
+          Your public key file. Usually <code>id_{rsa/dsa}.pub</code> (typically found in ~/.ssh). This will be appended
+          to the server's <code>authorized_keys</code> to grant you SSH access. Do
+          <strong>not</strong> upload a private key file.
+        </p>
+        {% if userhaskey %}
+        <p>Your current key is</p>
+        <textarea readonly class="form-control" rows="{{ config['DEFAULT_CORE_NODES'] }}">  {{ pubkey }}</textarea><br/>
+        You can upload another one:
+          <td class="field-input">
+            <input type="file" name="public-ssh-key" />
+          </td>
+          {% else %}
+          You do not have a current public key, you must upload one:
+        <td class="field-input">
+          <input type="file" name="public-ssh-key"  required/>
+        </td>
+        {% endif %}
+        <br/>
+        <input type="submit" class="btn btn-success" name="submit" value="Submit">
+        </form>
+        {% endif %}
+   
+      <h3> FHR Datasets</h3>
+      <p>
+        Our FHR data sits on S3. The time of creation is in  a text file at <i>s3://mozillametricsemrscripts/fhr/samples/createdTime.txt</i>.
+        The path to the samples are:
+      
+      <table class="table fhrtable">
+        <tbody>
+          <tr>
+            <td class="fhrtable">1%</td>
+            <td>s3://mozillametricsemrscripts/fhr/samples/1pct/1</td>
+          </tr>
+          <tr>
+            <td class="fhrtable">5%</td>
+            <td>s3://mozillametricsemrscripts/fhr/samples/5pct/1</td>
+          </tr>
+        </tbody>
+      </table>
+      </p>
+
+{% endblock %}
