@@ -66,9 +66,6 @@ aws s3 cp s3://mozillametricsemrscripts/rstudio/rstudio-server-0.98.1102-x86_64.
 sudo yum -y install --nogpgcheck $MYHOME/rstudio-server-0.98.1102-x86_64.rpm
 sudo chmod aou=rw /etc/rstudio/rsession.conf 
 sudo  echo "r-libs-user=/usr/local/rlibs/" >> /etc/rstudio/rsession.conf 
-aws s3 cp  s3://mozillametricsemrscripts/rlibraries/Rhipe_0.75.1.5_hadoop-2.tar.gz ~/
-cd $MYHOME
-R CMD INSTALL $MYHOME/Rhipe_0.75.1.5_hadoop-2.tar.gz 
 
 
 ## Setup Emacs
@@ -91,6 +88,10 @@ sudo mv $MYHOME/rlibs.tgz /usr/local/
 cd /usr/local
 sudo tar xfz rlibs.tgz --strip-components=2 
 sudo chmod -R 4777 /usr/local/rlibs/
+
+aws s3 cp  s3://mozillametricsemrscripts/rlibraries/Rhipe_0.75.1.5_hadoop-2.tar.gz $MYHOME/
+cd $MYHOME
+R CMD INSTALL -l /usr/local/rlibs/ $MYHOME/Rhipe_0.75.1.5_hadoop-2.tar.gz 
 
 
 
