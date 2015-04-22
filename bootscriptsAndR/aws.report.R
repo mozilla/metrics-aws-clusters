@@ -54,7 +54,7 @@ top$oldest.running.cluster <- if(top$oldest.running.cluster == -Inf) "no cluster
 
 introStr <- "Hello Metrics,
 
-The following is a report of AWS EMR usage for the last 7 days. Your clusters can be managed at: https://hala.metrics.scl3.mozilla.com:1978
+The following is a report of AWS EMR usage for the last 7 days. Your clusters can be managed at: https://hala.metrics.scl3.mozilla.com:8081
 
 Summary
 -------
