@@ -1,7 +1,7 @@
 FILE_FOR_SECKEY      = 'scr.dat'
-TASK_NODE_TYPE       = 'm3.medium'
-MASTER_INSTANCE_TYPE = 'm3.medium'
-CORE_INSTANCE_TYPE   = 'm3.medium'
+TASK_NODE_TYPE       = 'm1.large'
+MASTER_INSTANCE_TYPE = 'm3.xlarge'
+CORE_INSTANCE_TYPE   = 'm3.xlarge'
 REFRESH_TIME         = 120
 USER_DATA            = 'userdata.sqlite'
 AMI_VERSION          = '3.6.0'

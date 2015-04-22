@@ -32,9 +32,9 @@ start_time = datetime.datetime.now()
 
 with open(app.config['FILE_FOR_SECKEY']) as f:
    l = f.readlines()
-   app.config['SECRET_KEY']  = l[0]
-   app.config['ACCESS_ID']  = l[1]
-
+   app.config['SECRET_KEY'] = l[0].rstrip()
+   app.config['ACCESS_ID']  = l[1].rstrip()
+   
 botoconn = EmrConnection(aws_access_key_id=app.config['ACCESS_ID'], aws_secret_access_key=app.config['SECRET_KEY'])
 ec2boto = boto.connect_ec2(app.config['ACCESS_ID'], app.config['SECRET_KEY'])
 
@@ -103,7 +103,7 @@ def close_db(error):
     """Closes the database again at the end of the request."""
     pass
 
-task_node_max_price = { 'm3.xlarge':0.28, 'm3.large':0.140, 'm3.medium':0.07, 'm3.2xlarge':0.56}
+task_node_max_price = { 'm3.xlarge':0.28, 'm3.2xlarge':0.56,'m1.large':0.175,'m1.medium':0.087,'c3.xlarge':0.210}
 def summarizeSpot(prices,mtype=None):
    x =  pctfunction(prices)
    if x> task_node_max_price[mtype]:
@@ -382,7 +382,7 @@ def newcluster():
            # "-c", "fs.s3.buffer.dir='/mnt/var/lib/hadoop/s3,/mnt1/var/lib/hadoop/s3'", 
            # "-y", "yarn.nodemanager.local-dirs='/mnt/var/lib/hadoop/tmp/nm-local-dir,/mnt1/var/lib/hadoop/tmp/nm-local-dir'"
            ]
-        setup_hadoop_boostrap = BootstrapAction('Configure Hadoop',
+    setup_hadoop_boostrap = BootstrapAction('Configure Hadoop',
                                             's3://elasticmapreduce/bootstrap-actions/configure-hadoop',
                                             hadoop_config_options)
                                     
