@@ -57,8 +57,8 @@ echo 'export RHIPE_HADOOP_TMP_FOLDER=/tmp/' | sudo tee -a /etc/bashrc
 echo 'export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig' | sudo tee -a /etc/bashrc
 echo "export HADOOP_LIBS=`hadoop classpath | tr -d '*'`" | sudo tee -a /etc/bashrc
 
-sudo sed -i "s/.*PasswordAuthentication no.*/PasswordAuthentication yes/"  /etc/ssh/sshd_config
-sudo service  sshd restart
+#sudo sed -i "s/.*PasswordAuthentication no.*/PasswordAuthentication yes/"  /etc/ssh/sshd_config
+#sudo service  sshd restart
 
 ## Create the user and install rserver
 ## this runs on 8787
@@ -67,8 +67,8 @@ do
     sudo useradd -m ${auser}
     echo "${auser}:${auser}" | sudo chpasswd
     echo ${auser} | su -c  'mkdir $HOME/.ssh; chmod 700 $HOME/.ssh' ${auser}
-    # echo ${auser} | su -c  "echo \"${PUBLIC_KEY}\" >> /home/${auser}/.ssh/authorized_keys"  ${auser} 2>/dev/null
-    # sudo chmod 600 /home/${auser}/.ssh/authorized_keys
+    echo ${auser} | su -c  "echo \"${PUBLIC_KEY}\" >> /home/${auser}/.ssh/authorized_keys"  ${auser} 
+    sudo chmod 600 /home/${auser}/.ssh/authorized_keys
 done
 
 sudo yum -y install openssl098e # Required only for RedHat/CentOS 6 and 7
