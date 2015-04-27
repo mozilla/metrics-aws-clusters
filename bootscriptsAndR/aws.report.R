@@ -2,6 +2,14 @@ source("~/prefix.R") ## for email and %format%
 library(rjson)
 library(data.table)
 library(gsubfn)
+`%format%` <- function(fmt, list) {
+    pat <- "%\\(([^)]*)\\)"
+    fmt2 <- gsub(pat, "%", fmt)
+    list2 <- list[strapplyc(fmt, pat)[[1]]]
+    do.call("sprintf", c(fmt2, list2))
+}
+
+
 isn <- function(s,r=NA) if(is.null(s) || length(s)==0) NA else s
 awscommand <- function(cmd){
     fromJSON(paste(system(cmd,intern=TRUE),collapse="\n"))
