@@ -223,9 +223,10 @@ def modify_cluster():
        w1 = botoconn.list_instance_groups(c)
        thegroup = None
        for igr in w1.instancegroups:
-          if igr.instancegrouptype == "TASK" and ig.market == thetype:
+          if igr.instancegrouptype == "TASK" and igr.market == thetype:
              thegroup = igr
              break
+#       raise
        if numgr == 0:
           botoconn.modify_instance_groups( [thegroup.id], [0])
           return()
@@ -235,10 +236,10 @@ def modify_cluster():
              sp =  str(round(summarizeSpot(priceInfo['prices'],app.config['TASK_NODE_TYPE']),3))
              thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"SPOT","user-spot",sp)
           else:
-             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"ON_DEMOAND","user-dmd")
+             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"ON_DEMAND","user-dmd")
           botoconn.add_instance_groups(c,[thegroup])
        else:
-       	  botoconn.modify_instance_groups( [igr.id], [numgr])
+       	  botoconn.modify_instance_groups( [thegroup.id], [numgr])
    
     if not current_user.is_authorized():
         return login_manager.unauthorized()
@@ -252,9 +253,9 @@ def modify_cluster():
     for key in clusops:
         clusops[ key ]['kill'] = formdict.get(key+"-kill","off")
         ## -1 means no change ...
-        clusops[ key ]['newspot'] = int(formdict.get(key+"-spot")) if formdict.get(key+"-spot") not in (None,'')  else -1
-        clusops[ key ]['newdmd'] = int(formdict.get(key+"-ondmd")) if formdict.get(key+"-ondmd") not in (None,'')  else -1
-    # import pdb; pdb.set_trace()
+        clusops[ key ]['newspot'] = int(formdict.get(key+"-spot")) if formdict.get(key+"-spot") not in (None,'','donothing')  else -1
+        clusops[ key ]['newdmd'] = int(formdict.get(key+"-ondmd")) if formdict.get(key+"-ondmd") not in (None,'','donothing')  else -1
+    # import pdb; pdb.set_trace()	
     for key,value in clusops.iteritems():
         if value['kill'] == 'on':
             ## terminate job

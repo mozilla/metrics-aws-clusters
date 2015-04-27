@@ -131,6 +131,7 @@
               <!-- <td><input type="number" name={{ clus['id'] + "-spot" }} placeholder="" min="0"  max="15" size="3px" style="width: 50px;"> </td> -->
               <td>
                 <select class="form-control" name={{ clus['id'] + "-spot" }} >
+                  <option value="donothing">do nothing</option>
                   {% for n in range(0,40,5) %}
                     <option value="{{n}}">{{n}}</option>
                   {% endfor %}
@@ -138,6 +139,7 @@
               </td>
               <td>
                 <select class="form-control" name={{ clus['id'] + "-ondmd" }} >
+                  <option value="donothing">do nothing</option>
                   {% for n in range(0,40,5) %}
                     <option value="{{n}}">{{n}}</option>
                   {% endfor %}
