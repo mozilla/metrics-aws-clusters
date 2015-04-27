@@ -143,7 +143,7 @@ def get_clusters_for_user(conn,username):
         return yes
     def get_node_info_for_cluster(anid):
         instancegroups=conn.list_instance_groups(anid)
-        core,taskondmd,spotrun,spotwant = 0,0,0,0
+        core,taskondmd,taskdmdwant,spotrun,spotwant = 0,0,0,0,0
         if instancegroups is None:
             return 0,0
         for ig in instancegroups.instancegroups:
@@ -151,10 +151,11 @@ def get_clusters_for_user(conn,username):
                 core = core +int( ig.runninginstancecount)
             elif ig.instancegrouptype == 'TASK' and ig.market == "ON_DEMAND":
                 taskondmd = taskondmd + int(ig.runninginstancecount)
+                taskdmdwant = taskdmdwant + int(ig.requestedinstancecount)
             elif ig.instancegrouptype == 'TASK' and ig.market == "SPOT":
                 spotrun = spotrun + int(ig.runninginstancecount)
                 spotwant = spotwant+int(ig.requestedinstancecount)
-        return core,taskondmd,"%s[rqstd: %s]" % (spotrun,spotwant)
+        return core,"%s[rqstd: %s]" %(taskondmd,taskdmdwant),"%s[rqstd: %s]" % (spotrun,spotwant)
     def getIP(cc):
         try:
             return(clusdec.masterpublicdnsname)
