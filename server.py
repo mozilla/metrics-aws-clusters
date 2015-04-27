@@ -121,7 +121,7 @@ def getSpotPriceHistoryFor(conn, mtype, numdays,detail=False):
       h= conn.get_spot_price_history(start_time=tn, product_description="Linux/UNIX (Amazon VPC)",instance_type=mtype)
       cached_price_history[ (mtype, numdays1)] = [l.price for l in h]
    cached=True
-   print( cached_price_history.get( (mtype, numdays),"FOOOF:F"))
+   #print( cached_price_history.get( (mtype, numdays),"FOOOF:F"))
    if (timenow - start_time).seconds > 60  or cached_price_history.get( (mtype, numdays),None) == None:
       ## do a query and repopulate the cache
       cached = False
@@ -143,15 +143,18 @@ def get_clusters_for_user(conn,username):
         return yes
     def get_node_info_for_cluster(anid):
         instancegroups=conn.list_instance_groups(anid)
-        core,task = 0,0
+        core,taskondmd,spotrun,spotwant = 0,0,0,0
         if instancegroups is None:
             return 0,0
         for ig in instancegroups.instancegroups:
             if ig.instancegrouptype == 'CORE':
                 core = core +int( ig.runninginstancecount)
-            elif ig.instancegrouptype == 'TASK':
-                task = task + int(ig.runninginstancecount)
-        return core,task
+            elif ig.instancegrouptype == 'TASK' and ig.market == "ON_DEMAND":
+                taskondmd = taskondmd + int(ig.runninginstancecount)
+            elif ig.instancegrouptype == 'TASK' and ig.market == "SPOT":
+                spotrun = spotrun + int(ig.runninginstancecount)
+                spotwant = spotwant+int(ig.requestedinstancecount)
+        return core,taskondmd,"%s[rqstd: %s]" % (spotrun,spotwant)
     def getIP(cc):
         try:
             return(clusdec.masterpublicdnsname)
@@ -181,7 +184,7 @@ def get_clusters_for_user(conn,username):
                     i = i+1
                     en = { 'index':str(i), 'id' : clusdec.id, 'name' : clusdec.name,    'instancehrs': getattr(clusdec,'normalizedinstancehours',0),
                            'ip' : getIP(clusdec), 'state' : clusdec.status.state, 'ready' :getReadyTime(clusdec)}
-                    en['corenodes'],en['tasknodes'] = get_node_info_for_cluster(clusdec.id)
+                    en['corenodes'],en['tasknodesondmd'],en['tasknodesspot'] = get_node_info_for_cluster(clusdec.id)
                     toreturn.append(en)
         return False,toreturn
     except EmrResponseError,e:
@@ -216,21 +219,27 @@ def spotprices():
 @app.route("/modify_cluster", methods=["POST","GET"])
 @login_required
 def modify_cluster():
-    def adjustTG(c,numgr):
-      w1 = botoconn.list_instance_groups(c)
-      if numgr>0:
-         priceInfo= getSpotPriceHistoryFor(ec2boto, app.config['TASK_NODE_TYPE'], 1)
-         sp =  str(round(summarizeSpot(priceInfo['prices'],app.config['TASK_NODE_TYPE']),3))
-         igr = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"SPOT","user-spot",sp)
-         botoconn.add_instance_groups(c,[igr])
-      else:
-         ## kill em all!
-         taskig = []
-         for ig in w1.instancegroups:
-             if ig.instancegrouptype == "TASK":
-                taskig.append(ig)
-         n = [0] * len(taskig)
-         botoconn.modify_instance_groups( [x.id for x in taskig], n)
+    def adjustTG(c,numgr,thetype):
+       w1 = botoconn.list_instance_groups(c)
+       thegroup = None
+       for igr in w1.instancegroups:
+          if igr.instancegrouptype == "TASK" and ig.market == thetype:
+             thegroup = igr
+             break
+       if numgr == 0:
+          botoconn.modify_instance_groups( [thegroup.id], [0])
+          return()
+       if thegroup == None:
+          if thetype == "SPOT":
+             priceInfo= getSpotPriceHistoryFor(ec2boto, app.config['TASK_NODE_TYPE'], 1)
+             sp =  str(round(summarizeSpot(priceInfo['prices'],app.config['TASK_NODE_TYPE']),3))
+             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"SPOT","user-spot",sp)
+          else:
+             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"ON_DEMOAND","user-dmd")
+          botoconn.add_instance_groups(c,[thegroup])
+       else:
+       	  botoconn.modify_instance_groups( [igr.id], [numgr])
+   
     if not current_user.is_authorized():
         return login_manager.unauthorized()
     formdata = request.form
@@ -244,6 +253,7 @@ def modify_cluster():
         clusops[ key ]['kill'] = formdict.get(key+"-kill","off")
         ## -1 means no change ...
         clusops[ key ]['newspot'] = int(formdict.get(key+"-spot")) if formdict.get(key+"-spot") not in (None,'')  else -1
+        clusops[ key ]['newdmd'] = int(formdict.get(key+"-ondmd")) if formdict.get(key+"-ondmd") not in (None,'')  else -1
     # import pdb; pdb.set_trace()
     for key,value in clusops.iteritems():
         if value['kill'] == 'on':
@@ -251,7 +261,10 @@ def modify_cluster():
             botoconn.terminate_jobflow(key)
         elif int(value['newspot']) >= 0:
             ## spots are either 0 or >0, in any case run a modification
-            adjustTG(key,int(value['newspot']))
+            adjustTG(key,int(value['newspot']),'SPOT')
+        elif int(value['newdmd']) >= 0:
+            ## spots are either 0 or >0, in any case run a modification
+            adjustTG(key,int(value['newdmd']),'ON_DEMAND')
     return back.redirect()
 
 def checkIfUserSubmittedKey():

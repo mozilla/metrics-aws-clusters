@@ -27,7 +27,23 @@
 {% endblock %}
 
 {% block bodymain %}
-      <p>
+<p>
+  Welcome to the Metrics Cluster. It lives as you long wish it to
+  live. Once you log in (only Metrics team members and some others),
+  start a cluster if none is running.
+
+  <br/> If you need more computer power add extra <i>task</i>
+  nodes.
+  <ul>
+    <li>These task nodes do not store data and are used only for
+      computing.</li>
+    <li>You have the option to create task nodes using spot
+      instances (cheaper and preferable) or on-demand instances (your last
+      option).</li>
+    <li>These nodes are added/removed in groups of <i>5</i>.</li>
+  </ul>
+      
+  
         This is your very own cluster. Enjoy. Use responsibily.
         <ul>
           <li> In the following section, you can see the cluster statistics.</li>
@@ -55,7 +71,6 @@
         
         {% else %}
         {% if clusters|length> 0 %}
-        You can share your clusters instead of creating new ones since all of us can login into Rstudio and  the Master IP using. The user-id is your  Mozilla usernames (e.g. bcolloran, cchoi) and the password is the same as the username.
         <table class="table table-striped table-bordered table-condensed" style="font-size:70%;">
           <thead>
             <tr>
@@ -64,7 +79,7 @@
               <th>Started At</th>
               <th>State</th>
               <th>Instance Hours</th>
-              <th>Core/Task-OnDemand/Task-Spot</th>
+              <th>Core/Spot</th>
               <th>Master IP</th>
               <th>JobTracker UI</th>
               <th>RStudio UI</th>
@@ -79,7 +94,7 @@
               <td>{{ clus['ready'] }}</td>
               <td>{{ clus['state'] }}</td>
               <td>{{ clus['instancehrs'] }}</td>
-              <td>{{ clus['corenodes'] }} / {{clus['tasknodesondmd'] }} /  {{clus['tasknodesspot'] }} </td>
+              <td>{{ clus['corenodes'] }} / {{clus['tasknodes'] }}</td>
               <td>{{ clus['ip'] }}</td>
               <td><a href='{{ clus['ip']+":9026" }}' target="_blank"> {{ clus['ip']+":9026" }} </a></td>
               <td><a href='{{ clus['ip']+":8787" }}' target="_blank"> {{ clus['ip']+":8787" }} </a></td>
@@ -88,7 +103,7 @@
             {% endfor %}
           </tbody>
         </table>
-        <div style="font-size:60%;"> You can only check once every 3 minutes. {{timecheck}} </div>
+        <div style="font-size:60%;"> You can only check once every 7 minutes. {{timecheck}} </div>
         {% else %}
         No clusters running, why not create one?
         {% endif %}
@@ -96,20 +111,11 @@
 
              <h3>Cluster Operations</h3>
         {% if clusters|length> 0 %}
-             <ul>
-               <li> Task groups are comprised of  {{ config['TASK_NODE_TYPE'] }}
-                 instances.
-               </li>
-               <li> Task groups do not store data and are used for computing.</li>
-               <li> A task group can be comprised either of  <i>on-demand</i> or
-                 a <i>spot</i> instances. The former is more likely to start but
-                 a is bit pricier(~3x sometimes). The latter is <i>much</i> cheaper and ought to be your first choice, though if the bid is not met the group wont start. If your group is not starting, try on-demand.
-               </li>
-               <li>Spot price is set to the {{ config['SPOTTEXT'] }}
-                 (currently: {{ spot }}) .</li>
-               <li>To kill all your task spot groups, set to 0. To kill all your task on-demand groups set to 0.</li>
-               <li>To kill the cluster, check "Terminate".</li>
-               </ul>
+
+        Spots are always {{ config['TASK_NODE_TYPE'] }}
+        instances. Spot price is set to the {{ config['SPOTTEXT'] }} (currently: {{ spot }}) . To kill all the
+        spots, choose 0 for "Add # of Spots...".  To end the
+        cluster, check "Terminate".
         <div style="margin-bottom:10px;"></div>
         <form action="/modify_cluster" method="post" enctype="multipart/form-data">
         <table class="table table-striped table-bordered table-condensed" style="font-size:70%;">
@@ -117,8 +123,7 @@
             <tr>
               <th>Cluster ID</th>
               <th>Cluster Name</th>
-              <th>Set # of Spots Task Groups</th>
-              <th>Set # of On-Demand Task Groups</th>
+              <th>Add # of Spots</th>
               <th>Terminate Cluster</th>
             </tr>
           </thead>
@@ -131,13 +136,6 @@
               <!-- <td><input type="number" name={{ clus['id'] + "-spot" }} placeholder="" min="0"  max="15" size="3px" style="width: 50px;"> </td> -->
               <td>
                 <select class="form-control" name={{ clus['id'] + "-spot" }} >
-                  {% for n in range(0,40,5) %}
-                    <option value="{{n}}">{{n}}</option>
-                  {% endfor %}
-                </select>
-              </td>
-              <td>
-                <select class="form-control" name={{ clus['id'] + "-ondmd" }} >
                   {% for n in range(0,40,5) %}
                     <option value="{{n}}">{{n}}</option>
                   {% endfor %}
