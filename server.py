@@ -137,7 +137,7 @@ def get_clusters_for_user(conn,username):
             return False
         yes=False
         for l in tags:
-            if l.key == "user" and l.value==username:
+            if l.key == "user" and (l.value==username  or l.value == "metricsall"):
                 yes=True
                 break
         return yes
@@ -224,22 +224,22 @@ def modify_cluster():
        w1 = botoconn.list_instance_groups(c)
        thegroup = None
        for igr in w1.instancegroups:
-          if igr.instancegrouptype == "TASK" and igr.market == thetype:
+          if igr.instancegrouptype == "TASK" and igr.market == thetype and current_user.email in igr.name:
              thegroup = igr
              break
 #       raise
-       if numgr == 0:
-          botoconn.modify_instance_groups( [thegroup.id], [0])
-          return()
-       if thegroup == None:
+       ## modify if numgr >0 and no group, then create a new group with numgr
+       ## if a group exists, modify it whatever the value of numgr
+       ## if group doesn't exist and numgr  == 0, errr, ignore this.
+       if thegroup == None and numgr>0:
           if thetype == "SPOT":
-             priceInfo= getSpotPriceHistoryFor(ec2boto, app.config['TASK_NODE_TYPE'], 1)
+             priceInfo= getSpotPriceHistoryFor(ec2boto, app.config['TASK_NODE_TYPE'], app.config['SPOT_DAY_HIST'])
              sp =  str(round(summarizeSpot(priceInfo['prices'],app.config['TASK_NODE_TYPE']),3))
-             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"SPOT","user-spot",sp)
+             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"SPOT","task spot "+current_user.email,sp)
           else:
-             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"ON_DEMAND","user-dmd")
+             thegroup = InstanceGroup(numgr, "TASK",app.config['TASK_NODE_TYPE'],"ON_DEMAND","task dmd "+current_user.email)
           botoconn.add_instance_groups(c,[thegroup])
-       else:
+       elif not thegroup == None:
        	  botoconn.modify_instance_groups( [thegroup.id], [numgr])
    
     if not current_user.is_authorized():
@@ -261,12 +261,13 @@ def modify_cluster():
         if value['kill'] == 'on':
             ## terminate job
             botoconn.terminate_jobflow(key)
-        elif int(value['newspot']) >= 0:
+        else:
+            if int(value['newspot']) >= 0:
             ## spots are either 0 or >0, in any case run a modification
-            adjustTG(key,int(value['newspot']),'SPOT')
-        elif int(value['newdmd']) >= 0:
+            	adjustTG(key,int(value['newspot']),'SPOT')
+            if int(value['newdmd']) >= 0:
             ## spots are either 0 or >0, in any case run a modification
-            adjustTG(key,int(value['newdmd']),'ON_DEMAND')
+            	adjustTG(key,int(value['newdmd']),'ON_DEMAND')
     return back.redirect()
 
 def checkIfUserSubmittedKey():
@@ -289,7 +290,7 @@ def index():
     from pytz import timezone
     import pytz
     date_format='%m/%d/%Y %H:%M:%S %Z'
-    priceInfo = getSpotPriceHistoryFor(ec2boto, app.config['TASK_NODE_TYPE'], 3)
+    priceInfo = getSpotPriceHistoryFor(ec2boto, app.config['TASK_NODE_TYPE'], app.config['SPOT_DAY_HIST'])
     spotForM1Large = summarizeSpot(priceInfo['prices'],app.config['TASK_NODE_TYPE'])
     if current_user.is_authorized():
         ## we need to get a list of clusters and display them
